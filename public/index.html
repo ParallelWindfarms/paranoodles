@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="author" content="Johan Hidding" />
+  <title>ParaNoodles</title>
+  <style>
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+  </style>
+  <style>
+a.sourceLine { display: inline-block; line-height: 1.25; }
+a.sourceLine { pointer-events: none; color: inherit; text-decoration: inherit; }
+a.sourceLine:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode { white-space: pre; position: relative; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+code.sourceCode { white-space: pre-wrap; }
+a.sourceLine { text-indent: -1em; padding-left: 1em; }
+}
+pre.numberSource a.sourceLine
+  { position: relative; left: -4em; }
+pre.numberSource a.sourceLine::before
+  { content: attr(title);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; pointer-events: all; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {  }
+@media screen {
+a.sourceLine::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.2/MathJax.js?config=TeX-AMS_CHTML-full" type="text/javascript"></script>
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  <link href="https://fonts.googleapis.com/css?family=Dosis" rel="stylesheet">
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">ParaNoodles</h1>
+<p class="author">Johan Hidding</p>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#building-paranoodles">Building ParaNoodles</a></li>
+<li><a href="#problem-statement">Problem statement</a><ul>
+<li><a href="#example-damped-harmonic-oscillator">Example: damped harmonic oscillator</a></li>
+</ul></li>
+</ul>
+</nav>
+<p>ParaNoodles is an implementation of the Parareal on top of the Noodles framework in Python. <strong>Parareal</strong> is an algorithm for Parallel-in-time integration of ODEs (or PDEs through method of lines). <strong>Noodles</strong> is a framework for parallel programming in Python.</p>
+<h2 id="building-paranoodles">Building ParaNoodles</h2>
+<p>ParaNoodles is 100% Python. Requirements are placed in <code>requirements.txt</code>.</p>
+<pre><code>pip install -r requirements.txt</code></pre>
+<p>To run on a cluster environment (with the Xenon runner) you need <code>pyxenon</code> installed and a decently recent Java Runtime present.</p>
+<pre><code>pip install pyxenon</code></pre>
+<h2 id="problem-statement">Problem statement</h2>
+<p>I tried to implement the problem statement using abstract base classes (<code>ABC</code> module) and the <code>typing</code> module. However, type annotation in Python is still an immature feature (to say the least, it’s next to useless). The little annotation remaining should be considered documentation.</p>
+<p><em>file: «paranoodles/abstract.py»=</em></p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb3-1" title="1"><span class="im">from</span> typing <span class="im">import</span> Callable</a>
+<a class="sourceLine" id="cb3-2" title="2"><span class="im">from</span> abc <span class="im">import</span> (ABC, abstractmethod)</a>
+<a class="sourceLine" id="cb3-3" title="3"></a>
+<a class="sourceLine" id="cb3-4" title="4"><span class="op">&lt;&lt;</span>abstract<span class="op">-</span>types<span class="op">&gt;&gt;</span></a></code></pre></div>
+<p>We have an ODE in the form</p>
+<p><span id="eq:ode" style="display: inline-block; position: relative; width: 100%"><span class="math display">\[y&#39; = f(y, t).\]</span><span style="position: absolute; right: 0em; top: 50%; line-height:0; text-align: right">(1)</span></span></p>
+<p>Here <span class="math inline">\(y\)</span> can be a scalar value, a vector of values (say a <code>numpy</code> array), or any expression of <em>state</em>. A naive implementation of an ODE integrator would be</p>
+<p><span id="eq:euler-method" style="display: inline-block; position: relative; width: 100%"><span class="math display">\[y_{n+1} = y_{n} + \Delta t f(y_{n}, t).\]</span><span style="position: absolute; right: 0em; top: 50%; line-height:0; text-align: right">(2)</span></span></p>
+<p>eq. <a href="#eq:euler-method">2</a> is known as the <em>forward Euler method</em>. We can capture the <em>state</em> <span class="math inline">\(y\)</span> in an abstract class <code>Vector</code></p>
+<p><em>«abstract-types»=</em></p>
+<div class="sourceCode" id="abstract-types"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="abstract-types-1" title="1"><span class="kw">class</span> Vector(ABC):</a>
+<a class="sourceLine" id="abstract-types-2" title="2">    <span class="co">&quot;&quot;&quot;Abstract base class for state variable of a problem.</span></a>
+<a class="sourceLine" id="abstract-types-3" title="3"><span class="co">    This should support simple arithmatic operations.&quot;&quot;&quot;</span></a>
+<a class="sourceLine" id="abstract-types-4" title="4">    <span class="at">@abstractmethod</span></a>
+<a class="sourceLine" id="abstract-types-5" title="5">    <span class="kw">def</span> <span class="fu">__add__</span>(<span class="va">self</span>, other: Vector) <span class="op">-&gt;</span> Vector:</a>
+<a class="sourceLine" id="abstract-types-6" title="6">        <span class="co">&quot;&quot;&quot;Summation of two result vectors.&quot;&quot;&quot;</span></a>
+<a class="sourceLine" id="abstract-types-7" title="7">        <span class="cf">pass</span></a>
+<a class="sourceLine" id="abstract-types-8" title="8"></a>
+<a class="sourceLine" id="abstract-types-9" title="9">    <span class="at">@abstractmethod</span></a>
+<a class="sourceLine" id="abstract-types-10" title="10">    <span class="kw">def</span> <span class="fu">__sub__</span>(<span class="va">self</span>, other: Vector) <span class="op">-&gt;</span> Vector:</a>
+<a class="sourceLine" id="abstract-types-11" title="11">        <span class="co">&quot;&quot;&quot;Difference between two result vectors.&quot;&quot;&quot;</span></a>
+<a class="sourceLine" id="abstract-types-12" title="12">        <span class="cf">pass</span></a>
+<a class="sourceLine" id="abstract-types-13" title="13">    </a>
+<a class="sourceLine" id="abstract-types-14" title="14">    <span class="at">@abstractmethod</span></a>
+<a class="sourceLine" id="abstract-types-15" title="15">    <span class="kw">def</span> <span class="fu">__mul__</span>(<span class="va">self</span>, other: <span class="bu">float</span>) <span class="op">-&gt;</span> Vector:</a>
+<a class="sourceLine" id="abstract-types-16" title="16">        <span class="co">&quot;&quot;&quot;Scale vector with scalar.&quot;&quot;&quot;</span></a>
+<a class="sourceLine" id="abstract-types-17" title="17">    <span class="cf">pass</span></a>
+<a class="sourceLine" id="abstract-types-18" title="18"></a>
+<a class="sourceLine" id="abstract-types-19" title="19">    <span class="kw">def</span> <span class="fu">__rmul__</span>(<span class="va">self</span>, other: <span class="bu">float</span>) <span class="op">-&gt;</span> Vector</a>
+<a class="sourceLine" id="abstract-types-20" title="20">    <span class="cf">return</span> <span class="va">self</span> <span class="op">*</span> other</a></code></pre></div>
+<p>Note that we don’t make a distinction here between a state vector and a vector representing a change in state. This may change in the future.</p>
+<p>An ODE is then given as a function taking a <code>Vector</code> and a <code>float</code> returning a <code>Vector</code>. We define the type <code>Problem</code>:</p>
+<p><em>«abstract-types»=+</em></p>
+<div class="sourceCode" id="abstract-types"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="abstract-types-1" title="1">Problem <span class="op">=</span> Callable[[Vector, <span class="bu">float</span>], Vector]</a></code></pre></div>
+<p>If we have a <code>Problem</code>, we’re after a <code>Solution</code>: a function that, given an initial <code>Vector</code>, initial time and final time, gives the resulting <code>Vector</code>.</p>
+<p><em>«abstract-types»=+</em></p>
+<div class="sourceCode" id="abstract-types"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="abstract-types-1" title="1">Solution <span class="op">=</span> Callable[[Vector, <span class="bu">float</span>, <span class="bu">float</span>], Vector]</a></code></pre></div>
+<p>Then the forward Euler method (eq. <a href="#eq:euler-method">2</a>), is given by</p>
+<p><em>file: «paranoodles/forward_euler.py»=</em></p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb4-1" title="1"><span class="im">from</span> .abstract <span class="im">import</span> (Vector, Problem, Solution)</a>
+<a class="sourceLine" id="cb4-2" title="2"></a>
+<a class="sourceLine" id="cb4-3" title="3"><span class="kw">def</span> forward_euler(f: Problem) <span class="op">-&gt;</span> Solution:</a>
+<a class="sourceLine" id="cb4-4" title="4">    <span class="kw">def</span> step(y: Vector, t_0: <span class="bu">float</span>, t_1: <span class="bu">float</span>) <span class="op">-&gt;</span> Vector:</a>
+<a class="sourceLine" id="cb4-5" title="5">        <span class="co">&quot;&quot;&quot;Stepping function of Euler method.&quot;&quot;&quot;</span></a>
+<a class="sourceLine" id="cb4-6" title="6">        <span class="cf">return</span> y <span class="op">+</span> (t_1 <span class="op">-</span> t_0) <span class="op">*</span> f(y, t_0)</a>
+<a class="sourceLine" id="cb4-7" title="7">    <span class="cf">return</span> step</a></code></pre></div>
+<p>Any existing solution can be iterated over to provide a solution over a larger time interval. The <code>iterate_solution</code> function runs a given solution with a step-size fixed to <span class="math inline">\(\Delta t = h\)</span>.</p>
+<!--$${\rm Iter}[S, h]\Big|_{t_0, y = y}^{t_1} = \begin{cases}-->
+<!--y & t_0 = t_1 \\-->
+<!--{\rm Iter}[S, h]\big|_{t_0 + h, y = S(y, t_0, t_0 + h)}^{t_1} & {\rm otherwise}-->
+<!--\end{cases}.$$-->
+<p><em>file: «paranoodles/iterators.py»=</em></p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb5-1" title="1"><span class="im">from</span> .abstract <span class="im">import</span> (Vector, Problem, Solution)</a>
+<a class="sourceLine" id="cb5-2" title="2"><span class="im">import</span> numpy <span class="im">as</span> np</a>
+<a class="sourceLine" id="cb5-3" title="3"></a>
+<a class="sourceLine" id="cb5-4" title="4"><span class="kw">def</span> iterate_solution(step: Solution, h: <span class="bu">float</span>) <span class="op">-&gt;</span> Solution:</a>
+<a class="sourceLine" id="cb5-5" title="5">    <span class="kw">def</span> iter_step(y: Vector, t_0: <span class="bu">float</span>, t_1: <span class="bu">float</span>) <span class="op">-&gt;</span> Vector:</a>
+<a class="sourceLine" id="cb5-6" title="6">        <span class="co">&quot;&quot;&quot;Stepping function of iterated solution.&quot;&quot;&quot;</span></a>
+<a class="sourceLine" id="cb5-7" title="7">        n <span class="op">=</span> math.ceil((t_1 <span class="op">-</span> t_0) <span class="op">/</span> h)</a>
+<a class="sourceLine" id="cb5-8" title="8">        steps <span class="op">=</span> np.arange(t_0, t_1, n <span class="op">+</span> <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb5-9" title="9">        <span class="cf">for</span> t_a, t_b <span class="kw">in</span> <span class="bu">zip</span>(steps[:<span class="op">-</span><span class="dv">1</span>], steps[<span class="dv">1</span>:])</a>
+<a class="sourceLine" id="cb5-10" title="10">            y <span class="op">=</span> step(y, t_a, t_b)</a>
+<a class="sourceLine" id="cb5-11" title="11">        <span class="cf">return</span> y         </a>
+<a class="sourceLine" id="cb5-12" title="12">    <span class="cf">return</span> iter_step</a></code></pre></div>
+<h3 id="example-damped-harmonic-oscillator">Example: damped harmonic oscillator</h3>
+<p>The harmonic oscillator can model the movement of a pendulum or the vibration of a mass on a string.</p>
+<p><span class="math display">\[y&#39;&#39; + 2\zeta \omega_0 y&#39; + \omega_0^2 y = 0,\]</span></p>
+<p>where <span class="math inline">\(\omega_0 = \sqrt{k/m}\)</span> and <span class="math inline">\(\zeta = c / 2\sqrt{mk}\)</span>, <span class="math inline">\(k\)</span> being the spring constant, <span class="math inline">\(m\)</span> the test mass and <span class="math inline">\(c\)</span> the friction constant.</p>
+<p>To solve this second order ODE we need to introduce a second variable to solve for. Say <span class="math inline">\(q = y\)</span> and <span class="math inline">\(p = y&#39;\)</span>.</p>
+<p><span id="eq:harmonic-oscillator" style="display: inline-block; position: relative; width: 100%"><span class="math display">\[\begin{aligned}
+    q&#39; &amp;= p\\
+    p&#39; &amp;= -2\zeta \omega_0 p + \omega_0^2 q
+\end{aligned}\]</span><span style="position: absolute; right: 0em; top: 50%; line-height:0; text-align: right">(3)</span></span> </p>
+<p>The <code>Problem</code> is then given as</p>
+<p><em>file: «paranoodles/harmonic_oscillator.py»=</em></p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb6-1" title="1"><span class="im">from</span> .abstract <span class="im">import</span> (Problem)</a>
+<a class="sourceLine" id="cb6-2" title="2"></a>
+<a class="sourceLine" id="cb6-3" title="3"><span class="kw">def</span> harmonic_oscillator(omega_0: <span class="bu">float</span>, zeta: <span class="bu">float</span>) <span class="op">-&gt;</span> Problem:</a>
+<a class="sourceLine" id="cb6-4" title="4">    <span class="kw">def</span> f(y, t):</a>
+<a class="sourceLine" id="cb6-5" title="5">        <span class="cf">return</span> np.r_[x[<span class="dv">1</span>], <span class="dv">-2</span> <span class="op">*</span> zeta <span class="op">*</span> omega_0 <span class="op">*</span> x[<span class="dv">1</span>] <span class="op">-</span> omega_0<span class="op">**</span><span class="dv">2</span> <span class="op">*</span> x[<span class="dv">0</span>]]</a>
+<a class="sourceLine" id="cb6-6" title="6">    <span class="cf">return</span> f</a>
+<a class="sourceLine" id="cb6-7" title="7">    </a>
+<a class="sourceLine" id="cb6-8" title="8"><span class="op">&lt;&lt;</span>harmonic<span class="op">-</span>oscillator<span class="op">-</span>solution<span class="op">&gt;&gt;</span></a></code></pre></div>
+<h4 id="exact-solution">Exact solution</h4>
+<p>The damped harmonic oscillator has an exact solution, given the ansatz <span class="math inline">\(y = A \exp(z t)\)</span>, we get <span class="math display">\[z = \omega_0\left(-\zeta \pm \sqrt{\zeta^2 - 1}\right),\]</span> and in the case of underdamped motion (<span class="math inline">\(\zeta &lt; 1\)</span>), we can parametrize <span class="math inline">\(-\zeta = {\rm Re} \exp(i \xi)\)</span> and <span class="math inline">\(\pm \sqrt{1 - \zeta^2} = {\rm Im} \exp(i \xi)\)</span>, writing <span class="math inline">\(z = \omega_0 \exp(i\xi)\)</span>.</p>
+<p><span class="math display">\[y = A\quad \underbrace{\exp(-\omega_0\zeta t)}_{\rm dampening}\quad\underbrace{\exp(\pm i \omega_0 \sqrt{1 - \zeta^2} t)}_{\rm oscillation},\]</span> where <span class="math inline">\(A\)</span> is a complex scalar, giving the amplitude and phase of the solution.</p>
+<p>Also,</p>
+<p><span class="math display">\[p = A z\ \exp(z t) = A \omega_0\ \exp(i\xi) \exp(-\omega_0\zeta t)\ \exp(\pm i \omega_0 \sqrt{1 - \zeta^2} t),\]</span></p>
+<p>effectively scaling the solution for <span class="math inline">\(q\)</span> with a factor <span class="math inline">\(\omega_0\)</span> and phase-shifting it with <span class="math inline">\(\xi\)</span>.</p>
+<p>Given an initial condition <span class="math inline">\(q_0 = 1, p_0 = 0\)</span>, the solution is computed as</p>
+<p><em>«harmonic-oscillator-solution»=</em></p>
+<div class="sourceCode" id="harmonic-oscillator-solution"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="harmonic-oscillator-solution-1" title="1"><span class="kw">def</span> solution(omega_0, zeta):</a>
+<a class="sourceLine" id="harmonic-oscillator-solution-2" title="2">    A <span class="op">=</span> <span class="dv">1</span> <span class="op">/</span> np.sqrt(<span class="dv">1</span> <span class="op">-</span> zeta<span class="op">**</span><span class="dv">2</span>)</a>
+<a class="sourceLine" id="harmonic-oscillator-solution-3" title="3">    xi <span class="op">=</span> np.arccos(<span class="op">-</span>zeta)</a>
+<a class="sourceLine" id="harmonic-oscillator-solution-4" title="4">    phi <span class="op">=</span> np.pi<span class="op">/</span><span class="dv">2</span> <span class="op">-</span> xi</a>
+<a class="sourceLine" id="harmonic-oscillator-solution-5" title="5">    <span class="kw">def</span> f(t):</a>
+<a class="sourceLine" id="harmonic-oscillator-solution-6" title="6">        q <span class="op">=</span> A <span class="op">*</span> np.exp(<span class="op">-</span>omega_0<span class="op">*</span>zeta<span class="op">*</span>t) <span class="op">*</span> np.cos(omega_0 <span class="op">*</span> np.sqrt(<span class="dv">1</span> <span class="op">-</span> zeta<span class="op">**</span><span class="dv">2</span>) <span class="op">*</span> t <span class="op">+</span> phi)</a>
+<a class="sourceLine" id="harmonic-oscillator-solution-7" title="7">        p <span class="op">=</span> A <span class="op">*</span> omega_0 <span class="op">*</span> np.exp(<span class="op">-</span>omega_0<span class="op">*</span>zeta<span class="op">*</span>t) <span class="op">*</span> np.cos(omega_0 <span class="op">*</span> np.sqrt(<span class="dv">1</span><span class="op">-</span>zeta<span class="op">**</span><span class="dv">2</span>) <span class="op">*</span>t <span class="op">+</span> phi <span class="op">+</span> xi)</a>
+<a class="sourceLine" id="harmonic-oscillator-solution-8" title="8">        <span class="cf">return</span> np.c_[q, p]</a>
+<a class="sourceLine" id="harmonic-oscillator-solution-9" title="9">    <span class="cf">return</span> f</a></code></pre></div>
+</body>
+</html>
