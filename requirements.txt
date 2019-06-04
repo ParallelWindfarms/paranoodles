@@ -1,4 +1,7 @@
 noodles
 numpy
+scipy==1.2
 pygraphviz
 matplotlib
+plotnine
+pandas

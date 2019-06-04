@@ -1,4 +1,5 @@
 ## ------ language="Python" file="paranoodles/abstract.py"
+from __future__ import annotations  # enable self-reference in type annotations
 from typing import Callable
 from abc import (ABC, abstractmethod)
 
@@ -15,14 +16,14 @@ class Vector(ABC):
     def __sub__(self, other: Vector) -> Vector:
         """Difference between two result vectors."""
         pass
-    
+
     @abstractmethod
     def __mul__(self, other: float) -> Vector:
         """Scale vector with scalar."""
-	pass
+        pass
 
-    def __rmul__(self, other: float) -> Vector
-	return self * other
+    def __rmul__(self, other: float) -> Vector:
+        return self * other
 ## ------ end
 ## ------ begin <<abstract-types>>[1]
 Problem = Callable[[Vector, float], Vector]

@@ -78,6 +78,11 @@ h4:before {
     padding: 3pt 0 3pt 10pt;
 }
 
+.noweb {
+    font-style: italic;
+    font-size: smaller;
+}
+
 code
 {
     font-family: Courier, monospace;

@@ -1,4 +1,4 @@
-## ------ language="Python" file="paranoodles/iterators.py"
+## ------ language="Python" file="paranoodles/iterate_solution.py"
 from .abstract import (Vector, Problem, Solution)
 import numpy as np
 

@@ -23,7 +23,9 @@ function CodeBlock (elem)
     elem.attr[3] = {}
 
     if do_annotate then
-        return { pandoc.Para {pandoc.Emph (title)},  elem }
+        header_attrs = pandoc.Attr(nil, {"noweb"})
+        header = pandoc.Div(pandoc.Para {title}, header_attrs)
+        return { header,  elem }
     else
         return elem
     end

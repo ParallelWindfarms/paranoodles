@@ -90,9 +90,14 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <nav id="TOC" role="doc-toc">
 <ul>
 <li><a href="#building-paranoodles">Building ParaNoodles</a></li>
+<li><a href="#module">Module</a></li>
 <li><a href="#problem-statement">Problem statement</a><ul>
 <li><a href="#example-damped-harmonic-oscillator">Example: damped harmonic oscillator</a></li>
 </ul></li>
+<li><a href="#parareal">Parareal</a><ul>
+<li><a href="#noodlify">Noodlify</a></li>
+</ul></li>
+<li><a href="#tests">Tests</a></li>
 </ul>
 </nav>
 <p>ParaNoodles is an implementation of the Parareal on top of the Noodles framework in Python. <strong>Parareal</strong> is an algorithm for Parallel-in-time integration of ODEs (or PDEs through method of lines). <strong>Noodles</strong> is a framework for parallel programming in Python.</p>
@@ -101,19 +106,29 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <pre><code>pip install -r requirements.txt</code></pre>
 <p>To run on a cluster environment (with the Xenon runner) you need <code>pyxenon</code> installed and a decently recent Java Runtime present.</p>
 <pre><code>pip install pyxenon</code></pre>
+<h2 id="module">Module</h2>
+<div class="noweb">
+<p>file: «paranoodles/__init__.py»=</p>
+</div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb3-1" title="1"><span class="co"># empty for now</span></a></code></pre></div>
 <h2 id="problem-statement">Problem statement</h2>
 <p>I tried to implement the problem statement using abstract base classes (<code>ABC</code> module) and the <code>typing</code> module. However, type annotation in Python is still an immature feature (to say the least, it’s next to useless). The little annotation remaining should be considered documentation.</p>
-<p><em>file: «paranoodles/abstract.py»=</em></p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb3-1" title="1"><span class="im">from</span> typing <span class="im">import</span> Callable</a>
-<a class="sourceLine" id="cb3-2" title="2"><span class="im">from</span> abc <span class="im">import</span> (ABC, abstractmethod)</a>
-<a class="sourceLine" id="cb3-3" title="3"></a>
-<a class="sourceLine" id="cb3-4" title="4"><span class="op">&lt;&lt;</span>abstract<span class="op">-</span>types<span class="op">&gt;&gt;</span></a></code></pre></div>
+<div class="noweb">
+<p>file: «paranoodles/abstract.py»=</p>
+</div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb4-1" title="1"><span class="im">from</span> __future__ <span class="im">import</span> annotations  <span class="co"># enable self-reference in type annotations</span></a>
+<a class="sourceLine" id="cb4-2" title="2"><span class="im">from</span> typing <span class="im">import</span> Callable</a>
+<a class="sourceLine" id="cb4-3" title="3"><span class="im">from</span> abc <span class="im">import</span> (ABC, abstractmethod)</a>
+<a class="sourceLine" id="cb4-4" title="4"></a>
+<a class="sourceLine" id="cb4-5" title="5"><span class="op">&lt;&lt;</span>abstract<span class="op">-</span>types<span class="op">&gt;&gt;</span></a></code></pre></div>
 <p>We have an ODE in the form</p>
 <p><span id="eq:ode" style="display: inline-block; position: relative; width: 100%"><span class="math display">\[y&#39; = f(y, t).\]</span><span style="position: absolute; right: 0em; top: 50%; line-height:0; text-align: right">(1)</span></span></p>
 <p>Here <span class="math inline">\(y\)</span> can be a scalar value, a vector of values (say a <code>numpy</code> array), or any expression of <em>state</em>. A naive implementation of an ODE integrator would be</p>
 <p><span id="eq:euler-method" style="display: inline-block; position: relative; width: 100%"><span class="math display">\[y_{n+1} = y_{n} + \Delta t f(y_{n}, t).\]</span><span style="position: absolute; right: 0em; top: 50%; line-height:0; text-align: right">(2)</span></span></p>
 <p>eq. <a href="#eq:euler-method">2</a> is known as the <em>forward Euler method</em>. We can capture the <em>state</em> <span class="math inline">\(y\)</span> in an abstract class <code>Vector</code></p>
-<p><em>«abstract-types»=</em></p>
+<div class="noweb">
+<p>«abstract-types»=</p>
+</div>
 <div class="sourceCode" id="abstract-types"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="abstract-types-1" title="1"><span class="kw">class</span> Vector(ABC):</a>
 <a class="sourceLine" id="abstract-types-2" title="2">    <span class="co">&quot;&quot;&quot;Abstract base class for state variable of a problem.</span></a>
 <a class="sourceLine" id="abstract-types-3" title="3"><span class="co">    This should support simple arithmatic operations.&quot;&quot;&quot;</span></a>
@@ -126,48 +141,56 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <a class="sourceLine" id="abstract-types-10" title="10">    <span class="kw">def</span> <span class="fu">__sub__</span>(<span class="va">self</span>, other: Vector) <span class="op">-&gt;</span> Vector:</a>
 <a class="sourceLine" id="abstract-types-11" title="11">        <span class="co">&quot;&quot;&quot;Difference between two result vectors.&quot;&quot;&quot;</span></a>
 <a class="sourceLine" id="abstract-types-12" title="12">        <span class="cf">pass</span></a>
-<a class="sourceLine" id="abstract-types-13" title="13">    </a>
+<a class="sourceLine" id="abstract-types-13" title="13"></a>
 <a class="sourceLine" id="abstract-types-14" title="14">    <span class="at">@abstractmethod</span></a>
 <a class="sourceLine" id="abstract-types-15" title="15">    <span class="kw">def</span> <span class="fu">__mul__</span>(<span class="va">self</span>, other: <span class="bu">float</span>) <span class="op">-&gt;</span> Vector:</a>
 <a class="sourceLine" id="abstract-types-16" title="16">        <span class="co">&quot;&quot;&quot;Scale vector with scalar.&quot;&quot;&quot;</span></a>
-<a class="sourceLine" id="abstract-types-17" title="17">    <span class="cf">pass</span></a>
+<a class="sourceLine" id="abstract-types-17" title="17">        <span class="cf">pass</span></a>
 <a class="sourceLine" id="abstract-types-18" title="18"></a>
-<a class="sourceLine" id="abstract-types-19" title="19">    <span class="kw">def</span> <span class="fu">__rmul__</span>(<span class="va">self</span>, other: <span class="bu">float</span>) <span class="op">-&gt;</span> Vector</a>
-<a class="sourceLine" id="abstract-types-20" title="20">    <span class="cf">return</span> <span class="va">self</span> <span class="op">*</span> other</a></code></pre></div>
+<a class="sourceLine" id="abstract-types-19" title="19">    <span class="kw">def</span> <span class="fu">__rmul__</span>(<span class="va">self</span>, other: <span class="bu">float</span>) <span class="op">-&gt;</span> Vector:</a>
+<a class="sourceLine" id="abstract-types-20" title="20">        <span class="cf">return</span> <span class="va">self</span> <span class="op">*</span> other</a></code></pre></div>
 <p>Note that we don’t make a distinction here between a state vector and a vector representing a change in state. This may change in the future.</p>
 <p>An ODE is then given as a function taking a <code>Vector</code> and a <code>float</code> returning a <code>Vector</code>. We define the type <code>Problem</code>:</p>
-<p><em>«abstract-types»=+</em></p>
+<div class="noweb">
+<p>«abstract-types»=+</p>
+</div>
 <div class="sourceCode" id="abstract-types"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="abstract-types-1" title="1">Problem <span class="op">=</span> Callable[[Vector, <span class="bu">float</span>], Vector]</a></code></pre></div>
 <p>If we have a <code>Problem</code>, we’re after a <code>Solution</code>: a function that, given an initial <code>Vector</code>, initial time and final time, gives the resulting <code>Vector</code>.</p>
-<p><em>«abstract-types»=+</em></p>
+<div class="noweb">
+<p>«abstract-types»=+</p>
+</div>
 <div class="sourceCode" id="abstract-types"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="abstract-types-1" title="1">Solution <span class="op">=</span> Callable[[Vector, <span class="bu">float</span>, <span class="bu">float</span>], Vector]</a></code></pre></div>
 <p>Then the forward Euler method (eq. <a href="#eq:euler-method">2</a>), is given by</p>
-<p><em>file: «paranoodles/forward_euler.py»=</em></p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb4-1" title="1"><span class="im">from</span> .abstract <span class="im">import</span> (Vector, Problem, Solution)</a>
-<a class="sourceLine" id="cb4-2" title="2"></a>
-<a class="sourceLine" id="cb4-3" title="3"><span class="kw">def</span> forward_euler(f: Problem) <span class="op">-&gt;</span> Solution:</a>
-<a class="sourceLine" id="cb4-4" title="4">    <span class="kw">def</span> step(y: Vector, t_0: <span class="bu">float</span>, t_1: <span class="bu">float</span>) <span class="op">-&gt;</span> Vector:</a>
-<a class="sourceLine" id="cb4-5" title="5">        <span class="co">&quot;&quot;&quot;Stepping function of Euler method.&quot;&quot;&quot;</span></a>
-<a class="sourceLine" id="cb4-6" title="6">        <span class="cf">return</span> y <span class="op">+</span> (t_1 <span class="op">-</span> t_0) <span class="op">*</span> f(y, t_0)</a>
-<a class="sourceLine" id="cb4-7" title="7">    <span class="cf">return</span> step</a></code></pre></div>
+<div class="noweb">
+<p>file: «paranoodles/forward_euler.py»=</p>
+</div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb5-1" title="1"><span class="im">from</span> .abstract <span class="im">import</span> (Vector, Problem, Solution)</a>
+<a class="sourceLine" id="cb5-2" title="2"></a>
+<a class="sourceLine" id="cb5-3" title="3"><span class="kw">def</span> forward_euler(f: Problem) <span class="op">-&gt;</span> Solution:</a>
+<a class="sourceLine" id="cb5-4" title="4">    <span class="kw">def</span> step(y: Vector, t_0: <span class="bu">float</span>, t_1: <span class="bu">float</span>) <span class="op">-&gt;</span> Vector:</a>
+<a class="sourceLine" id="cb5-5" title="5">        <span class="co">&quot;&quot;&quot;Stepping function of Euler method.&quot;&quot;&quot;</span></a>
+<a class="sourceLine" id="cb5-6" title="6">        <span class="cf">return</span> y <span class="op">+</span> (t_1 <span class="op">-</span> t_0) <span class="op">*</span> f(y, t_0)</a>
+<a class="sourceLine" id="cb5-7" title="7">    <span class="cf">return</span> step</a></code></pre></div>
 <p>Any existing solution can be iterated over to provide a solution over a larger time interval. The <code>iterate_solution</code> function runs a given solution with a step-size fixed to <span class="math inline">\(\Delta t = h\)</span>.</p>
 <!--$${\rm Iter}[S, h]\Big|_{t_0, y = y}^{t_1} = \begin{cases}-->
 <!--y & t_0 = t_1 \\-->
 <!--{\rm Iter}[S, h]\big|_{t_0 + h, y = S(y, t_0, t_0 + h)}^{t_1} & {\rm otherwise}-->
 <!--\end{cases}.$$-->
-<p><em>file: «paranoodles/iterators.py»=</em></p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb5-1" title="1"><span class="im">from</span> .abstract <span class="im">import</span> (Vector, Problem, Solution)</a>
-<a class="sourceLine" id="cb5-2" title="2"><span class="im">import</span> numpy <span class="im">as</span> np</a>
-<a class="sourceLine" id="cb5-3" title="3"></a>
-<a class="sourceLine" id="cb5-4" title="4"><span class="kw">def</span> iterate_solution(step: Solution, h: <span class="bu">float</span>) <span class="op">-&gt;</span> Solution:</a>
-<a class="sourceLine" id="cb5-5" title="5">    <span class="kw">def</span> iter_step(y: Vector, t_0: <span class="bu">float</span>, t_1: <span class="bu">float</span>) <span class="op">-&gt;</span> Vector:</a>
-<a class="sourceLine" id="cb5-6" title="6">        <span class="co">&quot;&quot;&quot;Stepping function of iterated solution.&quot;&quot;&quot;</span></a>
-<a class="sourceLine" id="cb5-7" title="7">        n <span class="op">=</span> math.ceil((t_1 <span class="op">-</span> t_0) <span class="op">/</span> h)</a>
-<a class="sourceLine" id="cb5-8" title="8">        steps <span class="op">=</span> np.arange(t_0, t_1, n <span class="op">+</span> <span class="dv">1</span>)</a>
-<a class="sourceLine" id="cb5-9" title="9">        <span class="cf">for</span> t_a, t_b <span class="kw">in</span> <span class="bu">zip</span>(steps[:<span class="op">-</span><span class="dv">1</span>], steps[<span class="dv">1</span>:])</a>
-<a class="sourceLine" id="cb5-10" title="10">            y <span class="op">=</span> step(y, t_a, t_b)</a>
-<a class="sourceLine" id="cb5-11" title="11">        <span class="cf">return</span> y         </a>
-<a class="sourceLine" id="cb5-12" title="12">    <span class="cf">return</span> iter_step</a></code></pre></div>
+<div class="noweb">
+<p>file: «paranoodles/iterate_solution.py»=</p>
+</div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb6-1" title="1"><span class="im">from</span> .abstract <span class="im">import</span> (Vector, Problem, Solution)</a>
+<a class="sourceLine" id="cb6-2" title="2"><span class="im">import</span> numpy <span class="im">as</span> np</a>
+<a class="sourceLine" id="cb6-3" title="3"></a>
+<a class="sourceLine" id="cb6-4" title="4"><span class="kw">def</span> iterate_solution(step: Solution, h: <span class="bu">float</span>) <span class="op">-&gt;</span> Solution:</a>
+<a class="sourceLine" id="cb6-5" title="5">    <span class="kw">def</span> iter_step(y: Vector, t_0: <span class="bu">float</span>, t_1: <span class="bu">float</span>) <span class="op">-&gt;</span> Vector:</a>
+<a class="sourceLine" id="cb6-6" title="6">        <span class="co">&quot;&quot;&quot;Stepping function of iterated solution.&quot;&quot;&quot;</span></a>
+<a class="sourceLine" id="cb6-7" title="7">        n <span class="op">=</span> math.ceil((t_1 <span class="op">-</span> t_0) <span class="op">/</span> h)</a>
+<a class="sourceLine" id="cb6-8" title="8">        steps <span class="op">=</span> np.arange(t_0, t_1, n <span class="op">+</span> <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb6-9" title="9">        <span class="cf">for</span> t_a, t_b <span class="kw">in</span> <span class="bu">zip</span>(steps[:<span class="op">-</span><span class="dv">1</span>], steps[<span class="dv">1</span>:])</a>
+<a class="sourceLine" id="cb6-10" title="10">            y <span class="op">=</span> step(y, t_a, t_b)</a>
+<a class="sourceLine" id="cb6-11" title="11">        <span class="cf">return</span> y         </a>
+<a class="sourceLine" id="cb6-12" title="12">    <span class="cf">return</span> iter_step</a></code></pre></div>
 <h3 id="example-damped-harmonic-oscillator">Example: damped harmonic oscillator</h3>
 <p>The harmonic oscillator can model the movement of a pendulum or the vibration of a mass on a string.</p>
 <p><span class="math display">\[y&#39;&#39; + 2\zeta \omega_0 y&#39; + \omega_0^2 y = 0,\]</span></p>
@@ -178,31 +201,226 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
     p&#39; &amp;= -2\zeta \omega_0 p + \omega_0^2 q
 \end{aligned}\]</span><span style="position: absolute; right: 0em; top: 50%; line-height:0; text-align: right">(3)</span></span> </p>
 <p>The <code>Problem</code> is then given as</p>
-<p><em>file: «paranoodles/harmonic_oscillator.py»=</em></p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb6-1" title="1"><span class="im">from</span> .abstract <span class="im">import</span> (Problem)</a>
-<a class="sourceLine" id="cb6-2" title="2"></a>
-<a class="sourceLine" id="cb6-3" title="3"><span class="kw">def</span> harmonic_oscillator(omega_0: <span class="bu">float</span>, zeta: <span class="bu">float</span>) <span class="op">-&gt;</span> Problem:</a>
-<a class="sourceLine" id="cb6-4" title="4">    <span class="kw">def</span> f(y, t):</a>
-<a class="sourceLine" id="cb6-5" title="5">        <span class="cf">return</span> np.r_[x[<span class="dv">1</span>], <span class="dv">-2</span> <span class="op">*</span> zeta <span class="op">*</span> omega_0 <span class="op">*</span> x[<span class="dv">1</span>] <span class="op">-</span> omega_0<span class="op">**</span><span class="dv">2</span> <span class="op">*</span> x[<span class="dv">0</span>]]</a>
-<a class="sourceLine" id="cb6-6" title="6">    <span class="cf">return</span> f</a>
-<a class="sourceLine" id="cb6-7" title="7">    </a>
-<a class="sourceLine" id="cb6-8" title="8"><span class="op">&lt;&lt;</span>harmonic<span class="op">-</span>oscillator<span class="op">-</span>solution<span class="op">&gt;&gt;</span></a></code></pre></div>
+<div class="noweb">
+<p>file: «paranoodles/harmonic_oscillator.py»=</p>
+</div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb7-1" title="1"><span class="im">from</span> .abstract <span class="im">import</span> (Problem)</a>
+<a class="sourceLine" id="cb7-2" title="2"><span class="im">import</span> numpy <span class="im">as</span> np</a>
+<a class="sourceLine" id="cb7-3" title="3"></a>
+<a class="sourceLine" id="cb7-4" title="4"><span class="kw">def</span> harmonic_oscillator(omega_0: <span class="bu">float</span>, zeta: <span class="bu">float</span>) <span class="op">-&gt;</span> Problem:</a>
+<a class="sourceLine" id="cb7-5" title="5">    <span class="kw">def</span> f(y, t):</a>
+<a class="sourceLine" id="cb7-6" title="6">        <span class="cf">return</span> np.r_[y[<span class="dv">1</span>], <span class="dv">-2</span> <span class="op">*</span> zeta <span class="op">*</span> omega_0 <span class="op">*</span> y[<span class="dv">1</span>] <span class="op">-</span> omega_0<span class="op">**</span><span class="dv">2</span> <span class="op">*</span> y[<span class="dv">0</span>]]</a>
+<a class="sourceLine" id="cb7-7" title="7">    <span class="cf">return</span> f</a>
+<a class="sourceLine" id="cb7-8" title="8">    </a>
+<a class="sourceLine" id="cb7-9" title="9"><span class="op">&lt;&lt;</span>harmonic<span class="op">-</span>oscillator<span class="op">-</span>solution<span class="op">&gt;&gt;</span></a></code></pre></div>
 <h4 id="exact-solution">Exact solution</h4>
-<p>The damped harmonic oscillator has an exact solution, given the ansatz <span class="math inline">\(y = A \exp(z t)\)</span>, we get <span class="math display">\[z = \omega_0\left(-\zeta \pm \sqrt{\zeta^2 - 1}\right),\]</span> and in the case of underdamped motion (<span class="math inline">\(\zeta &lt; 1\)</span>), we can parametrize <span class="math inline">\(-\zeta = {\rm Re} \exp(i \xi)\)</span> and <span class="math inline">\(\pm \sqrt{1 - \zeta^2} = {\rm Im} \exp(i \xi)\)</span>, writing <span class="math inline">\(z = \omega_0 \exp(i\xi)\)</span>.</p>
-<p><span class="math display">\[y = A\quad \underbrace{\exp(-\omega_0\zeta t)}_{\rm dampening}\quad\underbrace{\exp(\pm i \omega_0 \sqrt{1 - \zeta^2} t)}_{\rm oscillation},\]</span> where <span class="math inline">\(A\)</span> is a complex scalar, giving the amplitude and phase of the solution.</p>
-<p>Also,</p>
-<p><span class="math display">\[p = A z\ \exp(z t) = A \omega_0\ \exp(i\xi) \exp(-\omega_0\zeta t)\ \exp(\pm i \omega_0 \sqrt{1 - \zeta^2} t),\]</span></p>
-<p>effectively scaling the solution for <span class="math inline">\(q\)</span> with a factor <span class="math inline">\(\omega_0\)</span> and phase-shifting it with <span class="math inline">\(\xi\)</span>.</p>
+<p>The damped harmonic oscillator has an exact solution, given the ansatz <span class="math inline">\(y = A \exp(z t)\)</span>, we get</p>
+<p><span class="math display">\[z = \omega_0\left(-\zeta \pm \sqrt{\zeta^2 - 1}\right).\]</span></p>
+<p>There are three cases: <em>overdamped</em> (<span class="math inline">\(\zeta &gt; 1\)</span>), <em>critical dampening</em> <span class="math inline">\(\zeta = 1,\ z = -\omega_0\)</span>, and <em>underdamped</em> <span class="math inline">\(0 \le \zeta &lt; 1,\ z = \omega_0 \exp (i\xi)\)</span>.</p>
+<p>In the underdamped case,</p>
+<p><span class="math display">\[y = A\quad \underbrace{\exp(-\omega_0\zeta t)}_{\rm dampening}\quad\underbrace{\exp(\pm i \omega_0 \sqrt{1 - \zeta^2} t)}_{\rm oscillation},\]</span></p>
 <p>Given an initial condition <span class="math inline">\(q_0 = 1, p_0 = 0\)</span>, the solution is computed as</p>
-<p><em>«harmonic-oscillator-solution»=</em></p>
-<div class="sourceCode" id="harmonic-oscillator-solution"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="harmonic-oscillator-solution-1" title="1"><span class="kw">def</span> solution(omega_0, zeta):</a>
-<a class="sourceLine" id="harmonic-oscillator-solution-2" title="2">    A <span class="op">=</span> <span class="dv">1</span> <span class="op">/</span> np.sqrt(<span class="dv">1</span> <span class="op">-</span> zeta<span class="op">**</span><span class="dv">2</span>)</a>
-<a class="sourceLine" id="harmonic-oscillator-solution-3" title="3">    xi <span class="op">=</span> np.arccos(<span class="op">-</span>zeta)</a>
-<a class="sourceLine" id="harmonic-oscillator-solution-4" title="4">    phi <span class="op">=</span> np.pi<span class="op">/</span><span class="dv">2</span> <span class="op">-</span> xi</a>
-<a class="sourceLine" id="harmonic-oscillator-solution-5" title="5">    <span class="kw">def</span> f(t):</a>
-<a class="sourceLine" id="harmonic-oscillator-solution-6" title="6">        q <span class="op">=</span> A <span class="op">*</span> np.exp(<span class="op">-</span>omega_0<span class="op">*</span>zeta<span class="op">*</span>t) <span class="op">*</span> np.cos(omega_0 <span class="op">*</span> np.sqrt(<span class="dv">1</span> <span class="op">-</span> zeta<span class="op">**</span><span class="dv">2</span>) <span class="op">*</span> t <span class="op">+</span> phi)</a>
-<a class="sourceLine" id="harmonic-oscillator-solution-7" title="7">        p <span class="op">=</span> A <span class="op">*</span> omega_0 <span class="op">*</span> np.exp(<span class="op">-</span>omega_0<span class="op">*</span>zeta<span class="op">*</span>t) <span class="op">*</span> np.cos(omega_0 <span class="op">*</span> np.sqrt(<span class="dv">1</span><span class="op">-</span>zeta<span class="op">**</span><span class="dv">2</span>) <span class="op">*</span>t <span class="op">+</span> phi <span class="op">+</span> xi)</a>
-<a class="sourceLine" id="harmonic-oscillator-solution-8" title="8">        <span class="cf">return</span> np.c_[q, p]</a>
-<a class="sourceLine" id="harmonic-oscillator-solution-9" title="9">    <span class="cf">return</span> f</a></code></pre></div>
+<div class="noweb">
+<p>«harmonic-oscillator-solution»=</p>
+</div>
+<div class="sourceCode" id="harmonic-oscillator-solution"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="harmonic-oscillator-solution-1" title="1"><span class="kw">def</span> underdamped_solution(omega_0: <span class="bu">float</span>, zeta: <span class="bu">float</span>) <span class="op">-&gt;</span> np.ndarray:</a>
+<a class="sourceLine" id="harmonic-oscillator-solution-2" title="2">    amp   <span class="op">=</span> <span class="dv">1</span> <span class="op">/</span> np.sqrt(<span class="dv">1</span> <span class="op">-</span> zeta<span class="op">**</span><span class="dv">2</span>)</a>
+<a class="sourceLine" id="harmonic-oscillator-solution-3" title="3">    phase <span class="op">=</span> np.arcsin(zeta)</a>
+<a class="sourceLine" id="harmonic-oscillator-solution-4" title="4">    freq  <span class="op">=</span> omega_0 <span class="op">*</span> np.sqrt(<span class="dv">1</span> <span class="op">-</span> zeta<span class="op">**</span><span class="dv">2</span>)</a>
+<a class="sourceLine" id="harmonic-oscillator-solution-5" title="5"></a>
+<a class="sourceLine" id="harmonic-oscillator-solution-6" title="6">    <span class="kw">def</span> f(t):</a>
+<a class="sourceLine" id="harmonic-oscillator-solution-7" title="7">        dampening <span class="op">=</span> np.exp(<span class="op">-</span>omega_0<span class="op">*</span>zeta<span class="op">*</span>t)</a>
+<a class="sourceLine" id="harmonic-oscillator-solution-8" title="8">        q <span class="op">=</span> amp <span class="op">*</span> dampening <span class="op">*</span> np.cos(freq <span class="op">*</span> t <span class="op">-</span> phase)</a>
+<a class="sourceLine" id="harmonic-oscillator-solution-9" title="9">        p <span class="op">=</span> <span class="op">-</span> amp <span class="op">*</span> omega_0 <span class="op">*</span> dampening <span class="op">*</span> np.sin(freq <span class="op">*</span> t)</a>
+<a class="sourceLine" id="harmonic-oscillator-solution-10" title="10">        <span class="cf">return</span> np.c_[q, p]</a>
+<a class="sourceLine" id="harmonic-oscillator-solution-11" title="11">    <span class="cf">return</span> f</a></code></pre></div>
+<h4 id="numeric-solution">Numeric solution</h4>
+<p>To plot a <code>Solution</code>, we need to tabulate the results for a given sequence of time points.</p>
+<div class="noweb">
+<p>file: «paranoodles/tabulate_solution.py»=</p>
+</div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb8-1" title="1"><span class="im">from</span> .abstract <span class="im">import</span> (Solution, Vector)</a>
+<a class="sourceLine" id="cb8-2" title="2"><span class="im">from</span> typing <span class="im">import</span> (Sequence)</a>
+<a class="sourceLine" id="cb8-3" title="3"><span class="im">import</span> numpy <span class="im">as</span> np</a>
+<a class="sourceLine" id="cb8-4" title="4"></a>
+<a class="sourceLine" id="cb8-5" title="5">Array <span class="op">=</span> np.ndarray</a>
+<a class="sourceLine" id="cb8-6" title="6"></a>
+<a class="sourceLine" id="cb8-7" title="7"><span class="kw">def</span> tabulate(step: Solution, y_0: Vector, t: Array) <span class="op">-&gt;</span> Sequence[Vector]:</a>
+<a class="sourceLine" id="cb8-8" title="8">    <span class="co">&quot;&quot;&quot;Tabulate the step-wise solution, starting from `y_0`, for every time</span></a>
+<a class="sourceLine" id="cb8-9" title="9"><span class="co">    point given in array `t`.&quot;&quot;&quot;</span></a>
+<a class="sourceLine" id="cb8-10" title="10">    <span class="cf">if</span> <span class="bu">isinstance</span>(y_0, Array):</a>
+<a class="sourceLine" id="cb8-11" title="11">        <span class="cf">return</span> tabulate_np(step, y_0, t)</a>
+<a class="sourceLine" id="cb8-12" title="12">        </a>
+<a class="sourceLine" id="cb8-13" title="13">    y <span class="op">=</span> [y_0]</a>
+<a class="sourceLine" id="cb8-14" title="14">    <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">1</span>, t.size):</a>
+<a class="sourceLine" id="cb8-15" title="15">        y_i <span class="op">=</span> step(y[i<span class="dv">-1</span>], t[i<span class="dv">-1</span>], t[i])</a>
+<a class="sourceLine" id="cb8-16" title="16">        y.append(y_i)</a>
+<a class="sourceLine" id="cb8-17" title="17">    <span class="cf">return</span> y</a>
+<a class="sourceLine" id="cb8-18" title="18"></a>
+<a class="sourceLine" id="cb8-19" title="19"><span class="op">&lt;&lt;</span>tabulate<span class="op">-</span>np<span class="op">&gt;&gt;</span></a></code></pre></div>
+<p>In the case that the <code>Vector</code> type is actually a numpy array, we can specialize the <code>tabulate</code> routine to return a larger array.</p>
+<div class="noweb">
+<p>«tabulate-np»=</p>
+</div>
+<div class="sourceCode" id="tabulate-np"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="tabulate-np-1" title="1"><span class="kw">def</span> tabulate_np(step: Solution, y_0: Array, t: Array) <span class="op">-&gt;</span> Array:</a>
+<a class="sourceLine" id="tabulate-np-2" title="2">    y <span class="op">=</span> np.zeros(dtype<span class="op">=</span>y_0.dtype, shape<span class="op">=</span>(t.size,) <span class="op">+</span> y_0.shape)</a>
+<a class="sourceLine" id="tabulate-np-3" title="3">    y[<span class="dv">0</span>] <span class="op">=</span> y_0</a>
+<a class="sourceLine" id="tabulate-np-4" title="4">    <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">1</span>, t.size):</a>
+<a class="sourceLine" id="tabulate-np-5" title="5">        y[i] <span class="op">=</span> step(y[i<span class="dv">-1</span>], t[i<span class="dv">-1</span>], t[i])</a>
+<a class="sourceLine" id="tabulate-np-6" title="6">    <span class="cf">return</span> y</a></code></pre></div>
+<h4 id="plotting-the-harmonic-oscillator">Plotting the harmonic oscillator</h4>
+<div class="noweb">
+<p>«plot-harmonic-oscillator»=</p>
+</div>
+<div class="sourceCode" id="plot-harmonic-oscillator"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="plot-harmonic-oscillator-1" title="1"><span class="im">import</span> matplotlib.pylab <span class="im">as</span> plt</a>
+<a class="sourceLine" id="plot-harmonic-oscillator-2" title="2"><span class="im">import</span> numpy <span class="im">as</span> np</a>
+<a class="sourceLine" id="plot-harmonic-oscillator-3" title="3"></a>
+<a class="sourceLine" id="plot-harmonic-oscillator-4" title="4"><span class="im">from</span> paranoodles.harmonic_oscillator <span class="im">import</span> <span class="op">\</span></a>
+<a class="sourceLine" id="plot-harmonic-oscillator-5" title="5">    ( harmonic_oscillator, underdamped_solution )</a>
+<a class="sourceLine" id="plot-harmonic-oscillator-6" title="6"><span class="im">from</span> paranoodles.forward_euler <span class="im">import</span> <span class="op">\</span></a>
+<a class="sourceLine" id="plot-harmonic-oscillator-7" title="7">    ( forward_euler )</a>
+<a class="sourceLine" id="plot-harmonic-oscillator-8" title="8"><span class="im">from</span> paranoodles.tabulate_solution <span class="im">import</span> <span class="op">\</span></a>
+<a class="sourceLine" id="plot-harmonic-oscillator-9" title="9">    ( tabulate )</a>
+<a class="sourceLine" id="plot-harmonic-oscillator-10" title="10"></a>
+<a class="sourceLine" id="plot-harmonic-oscillator-11" title="11">omega_0 <span class="op">=</span> <span class="fl">1.0</span></a>
+<a class="sourceLine" id="plot-harmonic-oscillator-12" title="12">zeta <span class="op">=</span> <span class="fl">0.5</span></a>
+<a class="sourceLine" id="plot-harmonic-oscillator-13" title="13">f <span class="op">=</span> harmonic_oscillator(omega_0, zeta)</a>
+<a class="sourceLine" id="plot-harmonic-oscillator-14" title="14">t <span class="op">=</span> np.linspace(<span class="fl">0.0</span>, <span class="fl">15.0</span>, <span class="dv">100</span>)</a>
+<a class="sourceLine" id="plot-harmonic-oscillator-15" title="15">y_euler <span class="op">=</span> tabulate(forward_euler(f), np.r_[<span class="fl">1.0</span>, <span class="fl">0.0</span>], t)</a>
+<a class="sourceLine" id="plot-harmonic-oscillator-16" title="16">y_exact <span class="op">=</span> underdamped_solution(omega_0, zeta)(t)</a>
+<a class="sourceLine" id="plot-harmonic-oscillator-17" title="17"></a>
+<a class="sourceLine" id="plot-harmonic-oscillator-18" title="18">plt.plot(t, y_euler[:,<span class="dv">0</span>], color<span class="op">=</span><span class="st">&#39;slateblue&#39;</span>, label<span class="op">=</span><span class="st">&quot;euler&quot;</span>)</a>
+<a class="sourceLine" id="plot-harmonic-oscillator-19" title="19">plt.plot(t, y_exact[:,<span class="dv">0</span>], color<span class="op">=</span><span class="st">&#39;k&#39;</span>, label<span class="op">=</span><span class="st">&quot;exact&quot;</span>)</a>
+<a class="sourceLine" id="plot-harmonic-oscillator-20" title="20">plt.plot(t, y_euler[:,<span class="dv">1</span>], color<span class="op">=</span><span class="st">&#39;slateblue&#39;</span>, linestyle<span class="op">=</span><span class="st">&#39;:&#39;</span>)</a>
+<a class="sourceLine" id="plot-harmonic-oscillator-21" title="21">plt.plot(t, y_exact[:,<span class="dv">1</span>], color<span class="op">=</span><span class="st">&#39;k&#39;</span>, linestyle<span class="op">=</span><span class="st">&#39;:&#39;</span>)</a>
+<a class="sourceLine" id="plot-harmonic-oscillator-22" title="22">plt.legend()</a>
+<a class="sourceLine" id="plot-harmonic-oscillator-23" title="23">plt.savefig(<span class="st">&quot;harmonic.svg&quot;</span>)</a></code></pre></div>
+<figure>
+<img src="./harmonic.svg" alt="Damped harmonic oscillator" /><figcaption>Damped harmonic oscillator</figcaption>
+</figure>
+<h2 id="parareal">Parareal</h2>
+<p>From Wikipedia:</p>
+<blockquote>
+<p>Parareal solves an initial value problem of the form</p>
+<p><span class="math display">\[\dot{y}(t) = f(y(t), t), \quad y(t_0) = y_0 \quad \text{with} \quad t_0 \leq t \leq T.\]</span></p>
+<p>Here, the right hand side <span class="math inline">\(f\)</span> can correspond to the spatial discretization of a partial differential equation in a method of lines approach. Parareal now requires a decomposition of the time interval <span class="math inline">\([t_0, T]\)</span> into <span class="math inline">\(P\)</span> so-called time slices <span class="math inline">\([t_j, t_{j+1}]\)</span> such that</p>
+<p><span class="math display">\[[t_0, T] = [t_0, t_1] \cup [t_1, t_2] \cup \ldots \cup [t_{P-1}, t_{P} ].\]</span></p>
+<p>Each time slice is assigned to one processing unit when parallelizing the algorithm, so that <span class="math inline">\(P\)</span> is equal to the number of processing units used for Parareal.</p>
+<p>Parareal is based on the iterative application of two methods for integration of ordinary differential equations. One, commonly labelled <span class="math inline">\({\mathcal {F}}\)</span>, should be of high accuracy and computational cost while the other, typically labelled <span class="math inline">\({\mathcal {G}}\)</span>, must be computationally cheap but can be much less accurate. Typically, some form of Runge-Kutta method is chosen for both coarse and fine integrator, where <span class="math inline">\({\mathcal {G}}\)</span> might be of lower order and use a larger time step than <span class="math inline">\({\mathcal {F}}\)</span>. If the initial value problem stems from the discretization of a PDE, <span class="math inline">\({\mathcal {G}}\)</span> can also use a coarser spatial discretization, but this can negatively impact convergence unless high order interpolation is used. The result of numerical integration with one of these methods over a time slice <span class="math inline">\([t_{j}, t_{j+1}]\)</span> for some starting value <span class="math inline">\(y_{j}\)</span> given at <span class="math inline">\(t_{j}\)</span> is then written as</p>
+<p><span class="math display">\[y = \mathcal{F}(y_j, t_j, t_{j+1})\ {\rm or}\ y = \mathcal{G}(y_j, t_j, t_{j+1}).\]</span></p>
+<p>Serial time integration with the fine method would then correspond to a step-by-step computation of</p>
+<p><span class="math display">\[y_{j+1} = \mathcal{F}(y_j, t_j, t_{j+1}), \quad j=0, \ldots, P-1.\]</span></p>
+<p>Parareal instead uses the following iteration</p>
+<p><span class="math display">\[y_{j+1}^{k+1} = \mathcal{G}(y^{k+1}_j, t_j, t_{j+1}) + \mathcal{F}(y^k_j, t_j, t_{j+1}) - \mathcal{G}(y^k_j, t_j, t_{j+1}),\\ \quad j=0, \ldots, P-1, \quad k=0, \ldots, K-1,\]</span></p>
+<p>where <span class="math inline">\(k\)</span> is the iteration counter. As the iteration converges and <span class="math inline">\(y^{k+1}_j - y^k_j \to 0\)</span>, the terms from the coarse method cancel out and Parareal reproduces the solution that is obtained by the serial execution of the fine method only. It can be shown that Parareal converges after a maximum of <span class="math inline">\(P\)</span> iterations. For Parareal to provide speedup, however, it has to converge in a number of iterations significantly smaller than the number of time slices, that is <span class="math inline">\(K \ll P\)</span>.</p>
+<p>In the Parareal iteration, the computationally expensive evaluation of <span class="math inline">\(\mathcal{F}(y^k_j, t_j, t_{j+1})\)</span> can be performed in parallel on <span class="math inline">\(P\)</span> processing units. By contrast, the dependency of <span class="math inline">\(y^{k+1}_{j+1}\)</span> on <span class="math inline">\(\mathcal{G}(y^{k+1}_j, t_j, t_{j+1})\)</span> means that the coarse correction has to be computed in serial order.</p>
+</blockquote>
+<p>The core equation translates to:</p>
+<div class="noweb">
+<p>«parareal-core»=</p>
+</div>
+<div class="sourceCode" id="parareal-core"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="parareal-core-1" title="1">y_n[i] <span class="op">=</span> coarse(y_n[i<span class="dv">-1</span>], t[i<span class="dv">-1</span>], t[i]) <span class="op">\</span></a>
+<a class="sourceLine" id="parareal-core-2" title="2">       <span class="op">+</span> fine(y[i<span class="dv">-1</span>], t[i<span class="dv">-1</span>], t[i]) <span class="op">\</span></a>
+<a class="sourceLine" id="parareal-core-3" title="3">       <span class="op">-</span> coarse(y[i<span class="dv">-1</span>], t[i<span class="dv">-1</span>], t[i])</a></code></pre></div>
+<p>The rest is boiler plate.</p>
+<div class="noweb">
+<p>file: «paranoodles/parareal.py»=</p>
+</div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb9-1" title="1"><span class="im">from</span> .abstract <span class="im">import</span> (Solution)</a>
+<a class="sourceLine" id="cb9-2" title="2"></a>
+<a class="sourceLine" id="cb9-3" title="3"><span class="kw">def</span> parareal(coarse: Solution, fine: Solution):</a>
+<a class="sourceLine" id="cb9-4" title="4">    <span class="kw">def</span> f(y, t):</a>
+<a class="sourceLine" id="cb9-5" title="5">        m <span class="op">=</span> t.size</a>
+<a class="sourceLine" id="cb9-6" title="6">        y_n <span class="op">=</span> [<span class="va">None</span>] <span class="op">*</span> m</a>
+<a class="sourceLine" id="cb9-7" title="7">        y_n[<span class="dv">0</span>] <span class="op">=</span> y[<span class="dv">0</span>]</a>
+<a class="sourceLine" id="cb9-8" title="8">        <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">1</span>, m):</a>
+<a class="sourceLine" id="cb9-9" title="9">            <span class="op">&lt;&lt;</span>parareal<span class="op">-</span>core<span class="op">&gt;&gt;</span></a>
+<a class="sourceLine" id="cb9-10" title="10">        <span class="cf">return</span> y_n</a>
+<a class="sourceLine" id="cb9-11" title="11">    </a>
+<a class="sourceLine" id="cb9-12" title="12">    <span class="cf">return</span> f</a></code></pre></div>
+<h3 id="noodlify">Noodlify</h3>
+<p>The way we implemented the <code>parareal</code> function is not very efficient. It’s Python, there’s a recursion in the dependency, so no way to sweeten it up with <code>numpy</code>. Suppose however, that the <code>fine</code> solution may take a while to compute, and we only use Python to steer the computation. How can we paralellise the implementation of <code>parareal</code>? The answer is: we don’t need to! Noodles can do it for us.</p>
+<div class="noweb">
+<p>«noodlify»=</p>
+</div>
+<div class="sourceCode" id="noodlify"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="noodlify-1" title="1"><span class="im">import</span> numpy <span class="im">as</span> np</a>
+<a class="sourceLine" id="noodlify-2" title="2"><span class="im">import</span> noodles</a>
+<a class="sourceLine" id="noodlify-3" title="3"><span class="im">from</span> noodles.draw_workflow <span class="im">import</span> draw_workflow</a>
+<a class="sourceLine" id="noodlify-4" title="4"></a>
+<a class="sourceLine" id="noodlify-5" title="5"><span class="im">from</span> paranoodles.harmonic_oscillator <span class="im">import</span> <span class="op">\</span></a>
+<a class="sourceLine" id="noodlify-6" title="6">    ( harmonic_oscillator, underdamped_solution )</a>
+<a class="sourceLine" id="noodlify-7" title="7"><span class="im">from</span> paranoodles.forward_euler <span class="im">import</span> <span class="op">\</span></a>
+<a class="sourceLine" id="noodlify-8" title="8">    ( forward_euler )</a>
+<a class="sourceLine" id="noodlify-9" title="9"><span class="im">from</span> paranoodles.tabulate_solution <span class="im">import</span> <span class="op">\</span></a>
+<a class="sourceLine" id="noodlify-10" title="10">    ( tabulate )</a>
+<a class="sourceLine" id="noodlify-11" title="11"><span class="im">from</span> paranoodles.parareal <span class="im">import</span> <span class="op">\</span></a>
+<a class="sourceLine" id="noodlify-12" title="12">    ( parareal)</a></code></pre></div>
+<p>To see what Noodles does, first we’ll noodlify the direct integration routine in <code>tabulate</code>. We take the same harmonic oscillator we had before. For the sake of argument let’s divide the time line in three steps (so four points).</p>
+<div class="noweb">
+<p>«noodlify»=+</p>
+</div>
+<div class="sourceCode" id="noodlify"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="noodlify-1" title="1">omega_0 <span class="op">=</span> <span class="fl">1.0</span></a>
+<a class="sourceLine" id="noodlify-2" title="2">zeta <span class="op">=</span> <span class="fl">0.5</span></a>
+<a class="sourceLine" id="noodlify-3" title="3">f <span class="op">=</span> harmonic_oscillator(omega_0, zeta)</a>
+<a class="sourceLine" id="noodlify-4" title="4">t <span class="op">=</span> np.linspace(<span class="fl">0.0</span>, <span class="fl">15.0</span>, <span class="dv">4</span>)</a></code></pre></div>
+<p>We now define the <code>fine</code> integrator:</p>
+<div class="noweb">
+<p>«noodlify»=+</p>
+</div>
+<div class="sourceCode" id="noodlify"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="noodlify-1" title="1">h <span class="op">=</span> <span class="fl">0.01</span></a>
+<a class="sourceLine" id="noodlify-2" title="2"></a>
+<a class="sourceLine" id="noodlify-3" title="3"><span class="at">@noodles.schedule</span></a>
+<a class="sourceLine" id="noodlify-4" title="4"><span class="kw">def</span> fine(x, t_0, t_1):</a>
+<a class="sourceLine" id="noodlify-5" title="5">    <span class="cf">return</span> iterate_solution(forward_euler(f), h)(x, t_0, t_1)</a></code></pre></div>
+<p>It doesn’t really matter what the fine integrator does, since we won’t run anything. We’ll just pretend. The <code>noodles.schedule</code> decorator makes sure that the integrator is never called, we just store the information that we <em>want</em> to call the <code>fine</code> function. The resulting value is a <em>promise</em> that at some point we <em>will</em> call the <code>fine</code> function. The nice thing is, that this promise behaves like any other Python object, it even qualifies as a <code>Vector</code>! The <code>tabulate</code> routine returns a <code>Sequence</code> of <code>Vector</code>s, in this case a list of promises. The <code>noodles.gather</code> function takes a list of promises and turns it into a promise of a list (in fact, its definition boils down to <code>noodles.schedule(list)</code>).</p>
+<div class="noweb">
+<p>«noodlify»=+</p>
+</div>
+<div class="sourceCode" id="noodlify"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="noodlify-1" title="1">y_euler <span class="op">=</span> noodles.gather(</a>
+<a class="sourceLine" id="noodlify-2" title="2">    <span class="op">*</span>tabulate(noodles.schedule(fine), [<span class="fl">1.0</span>, <span class="fl">0.0</span>], t))</a></code></pre></div>
+<p>We can draw the resulting workflow:</p>
+<div class="noweb">
+<p>«noodlify»=+</p>
+</div>
+<div class="sourceCode" id="noodlify"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="noodlify-1" title="1"><span class="kw">def</span> paint(node, name):</a>
+<a class="sourceLine" id="noodlify-2" title="2">    <span class="cf">if</span> name <span class="op">==</span> <span class="st">&quot;coarse&quot;</span>:</a>
+<a class="sourceLine" id="noodlify-3" title="3">        node.attr[<span class="st">&quot;fillcolor&quot;</span>] <span class="op">=</span> <span class="st">&quot;#cccccc&quot;</span></a>
+<a class="sourceLine" id="noodlify-4" title="4">    <span class="cf">elif</span> name <span class="op">==</span> <span class="st">&quot;fine&quot;</span>:</a>
+<a class="sourceLine" id="noodlify-5" title="5">        node.attr[<span class="st">&quot;fillcolor&quot;</span>] <span class="op">=</span> <span class="st">&quot;#88ff88&quot;</span></a>
+<a class="sourceLine" id="noodlify-6" title="6">    <span class="cf">else</span>:</a>
+<a class="sourceLine" id="noodlify-7" title="7">        node.attr[<span class="st">&quot;fillcolor&quot;</span>] <span class="op">=</span> <span class="st">&quot;#ffffff&quot;</span>        </a>
+<a class="sourceLine" id="noodlify-8" title="8"> </a>
+<a class="sourceLine" id="noodlify-9" title="9">draw_workflow(<span class="st">&#39;seq-graph.svg&#39;</span>, noodles.get_workflow(y_euler), paint)</a></code></pre></div>
+<figure>
+<img src="./seq-graph.svg" alt="Sequential integration" style="width:50.0%" /><figcaption>Sequential integration</figcaption>
+</figure>
+<p>Now for Parareal! We also define the <code>coarse</code> integrator.</p>
+<div class="noweb">
+<p>«noodlify»=+</p>
+</div>
+<div class="sourceCode" id="noodlify"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="noodlify-1" title="1"><span class="at">@noodles.schedule</span></a>
+<a class="sourceLine" id="noodlify-2" title="2"><span class="kw">def</span> coarse(x, t_0, t_1):</a>
+<a class="sourceLine" id="noodlify-3" title="3">    <span class="cf">return</span> forward_euler(f)(x, t_0, t_1)</a></code></pre></div>
+<p>Parareal is initialised with the ODE integrated by the coarse integrator, just like we did before with the fine one.</p>
+<div class="noweb">
+<p>«noodlify»=+</p>
+</div>
+<div class="sourceCode" id="noodlify"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="noodlify-1" title="1">y_first <span class="op">=</span> noodles.gather(<span class="op">*</span>tabulate(noodles.schedule(coarse), [<span class="fl">1.0</span>, <span class="fl">0.0</span>], t))</a></code></pre></div>
+<p>We can now perform a single iteration of Parareal to see what the workflow looks like:</p>
+<div class="noweb">
+<p>«noodlify»=+</p>
+</div>
+<div class="sourceCode" id="noodlify"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="noodlify-1" title="1">y_parareal <span class="op">=</span> noodles.gather(<span class="op">*</span>parareal(coarse, fine)(y_first, t))</a>
+<a class="sourceLine" id="noodlify-2" title="2">draw_workflow(<span class="st">&#39;parareal-graph.svg&#39;</span>, noodles.get_workflow(y_parareal), paint)</a></code></pre></div>
+<figure>
+<img src="./parareal-graph.svg" alt="Parareal iteration; the fine integrators (green) can be run in parallel." /><figcaption>Parareal iteration; the fine integrators (green) can be run in parallel.</figcaption>
+</figure>
+<h2 id="tests">Tests</h2>
+<div class="noweb">
+<p>file: «test.py»=</p>
+</div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb10-1" title="1"><span class="op">&lt;&lt;</span>plot<span class="op">-</span>harmonic<span class="op">-</span>oscillator<span class="op">&gt;&gt;</span></a>
+<a class="sourceLine" id="cb10-2" title="2"></a>
+<a class="sourceLine" id="cb10-3" title="3"><span class="op">&lt;&lt;</span>noodlify<span class="op">&gt;&gt;</span></a></code></pre></div>
 </body>
 </html>
