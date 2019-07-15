@@ -7,10 +7,10 @@ ParaNoodles is an implementation of the Parareal on top of the Noodles framework
 
 # Building ParaNoodles
 
-ParaNoodles is 100% Python. Requirements are placed in `requirements.txt`.
+ParaNoodles is 100% Python.
 
 ```
-pip install -r requirements.txt
+pip install .
 ```
 
 To run on a cluster environment (with the Xenon runner) you need `pyxenon` installed and a decently recent Java Runtime present.
