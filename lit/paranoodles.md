@@ -293,7 +293,7 @@ from paranoodles.forward_euler import \
 from paranoodles.tabulate_solution import \
     ( tabulate )
 from paranoodles.parareal import \
-    ( parareal)
+    ( parareal )
 ```
 
 To see what Noodles does, first we'll noodlify the direct integration routine in `tabulate`. We take the same harmonic oscillator we had before. For the sake of argument let's divide the time line in three steps (so four points).

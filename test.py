@@ -37,7 +37,7 @@ from paranoodles.forward_euler import \
 from paranoodles.tabulate_solution import \
     ( tabulate )
 from paranoodles.parareal import \
-    ( parareal)
+    ( parareal )
 ## ------ end
 ## ------ begin <<noodlify>>[1]
 omega_0 = 1.0
