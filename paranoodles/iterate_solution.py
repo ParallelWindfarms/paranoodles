@@ -1,4 +1,5 @@
-## ------ language="Python" file="paranoodles/iterate_solution.py"
+# ~\~ language=Python filename=paranoodles/iterate_solution.py
+# ~\~ begin <<lit/paranoodles.md|paranoodles/iterate_solution.py>>[0]
 from .abstract import (Vector, Problem, Solution)
 import numpy as np
 
@@ -11,4 +12,4 @@ def iterate_solution(step: Solution, h: float) -> Solution:
             y = step(y, t_a, t_b)
         return y         
     return iter_step
-## ------ end
+# ~\~ end

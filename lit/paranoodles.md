@@ -219,7 +219,7 @@ plt.legend()
 plt.savefig("harmonic.svg")
 ```
 
-![Damped harmonic oscillator](./harmonic.svg)
+![Damped harmonic oscillator](./img/harmonic.svg)
 
 # Parareal
 
@@ -336,7 +336,7 @@ def paint(node, name):
 draw_workflow('seq-graph.svg', noodles.get_workflow(y_euler), paint)
 ```
 
-![Sequential integration](./seq-graph.svg){width=50%}
+![Sequential integration](./img/seq-graph.svg){width=50%}
 
 This workflow is entirely sequential, every step depending on the preceding one. Now for Parareal! We also define the `coarse` integrator.
 
@@ -359,7 +359,7 @@ y_parareal = noodles.gather(*parareal(coarse, fine)(y_first, t))
 draw_workflow('parareal-graph.svg', noodles.get_workflow(y_parareal), paint)
 ```
 
-![Parareal iteration; the fine integrators (green) can be run in parallel.](./parareal-graph.svg)
+![Parareal iteration; the fine integrators (green) can be run in parallel.](./img/parareal-graph.svg)
 
 # Tests
 
