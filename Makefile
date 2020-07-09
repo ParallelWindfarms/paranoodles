@@ -26,6 +26,7 @@ pandoc_args += --css css/mods.css
 pandoc_args += -t html5 -s --mathjax --toc
 pandoc_args += --toc-depth 1
 pandoc_args += --filter pandoc-bootstrap
+pandoc_args += --filter pandoc-eqnos --filter pandoc-fignos
 pandoc_args += -f markdown+multiline_tables+simple_tables
 
 # Load syntax definitions for languages that are not supported

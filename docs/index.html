@@ -81,6 +81,13 @@ code span.wa { color: #8f5902; font-weight: bold; font-style: italic; } /* Warni
   <!--[if lt IE 9]>
     <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
   <![endif]-->
+  
+  <!-- pandoc-eqnos: equation style -->
+  <style>
+    .eqnos { display: inline-block; position: relative; width: 100%; }
+    .eqnos br { display: none; }
+    .eqnos-number { position: absolute; right: 0em; top: 50%; line-height: 0; }
+  </style>
 <!-- <script data-main="scripts/main" src="js/require.js"></script> -->
   <!-- Load React. -->
   <!-- Note: when deploying, replace "development.js" with "production.min.js". -->
@@ -136,10 +143,10 @@ code span.wa { color: #8f5902; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb4-5"><a href="#cb4-5"></a><span class="op">&lt;&lt;</span>abstract<span class="op">-</span>types<span class="op">&gt;&gt;</span></span></code></pre></div>
 </div>
 <p>We have an ODE in the form</p>
-<p><span class="math display">\[y&#39; = f(y, t).\]</span>{#eq:ode}</p>
+<p><span id="eq:ode" class="eqnos"><span class="math display">\[y&#39; = f(y, t).\]</span><span class="eqnos-number">(1)</span></span></p>
 <p>Here <span class="math inline">\(y\)</span> can be a scalar value, a vector of values (say a <code>numpy</code> array), or any expression of <em>state</em>. A naive implementation of an ODE integrator would be</p>
-<p><span class="math display">\[y_{n+1} = y_{n} + \Delta t f(y_{n}, t).\]</span>{#eq:euler-method}</p>
-<p>+<span class="citation" data-cites="eq:euler-method">@eq:euler-method</span> is known as the <em>forward Euler method</em>. We can capture the <em>state</em> <span class="math inline">\(y\)</span> in an abstract class <code>Vector</code></p>
+<p><span id="eq:euler-method" class="eqnos"><span class="math display">\[y_{n+1} = y_{n} + \Delta t f(y_{n}, t).\]</span><span class="eqnos-number">(2)</span></span></p>
+<p>eq. <a href="#eq:euler-method">2</a> is known as the <em>forward Euler method</em>. We can capture the <em>state</em> <span class="math inline">\(y\)</span> in an abstract class <code>Vector</code></p>
 <div class="annotated-code">
 <p><span><em>«abstract-types»=</em></span></p>
 <div class="sourceCode" id="abstract-types"><pre class="sourceCode python"><code class="sourceCode python"><span id="abstract-types-1"><a href="#abstract-types-1"></a><span class="kw">class</span> Vector(ABC):</span>
@@ -174,7 +181,7 @@ code span.wa { color: #8f5902; font-weight: bold; font-style: italic; } /* Warni
 <p><span><em>«abstract-types»+</em></span></p>
 <div class="sourceCode" id="abstract-types"><pre class="sourceCode python"><code class="sourceCode python"><span id="abstract-types-1"><a href="#abstract-types-1"></a>Solution <span class="op">=</span> Callable[[Vector, <span class="bu">float</span>, <span class="bu">float</span>], Vector]</span></code></pre></div>
 </div>
-<p>Then the forward Euler method (+<span class="citation" data-cites="eq:euler-method">@eq:euler-method</span>), is given by</p>
+<p>Then the forward Euler method (eq. <a href="#eq:euler-method">2</a>), is given by</p>
 <div class="annotated-code">
 <p><span><em>«paranoodles/forward_euler.py»=</em></span></p>
 <div class="sourceCode" id="cb5" data-file="paranoodles/forward_euler.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1"></a><span class="im">from</span> .abstract <span class="im">import</span> (Vector, Problem, Solution)</span>
@@ -210,10 +217,10 @@ code span.wa { color: #8f5902; font-weight: bold; font-style: italic; } /* Warni
 <p><span class="math display">\[y&#39;&#39; + 2\zeta \omega_0 y&#39; + \omega_0^2 y = 0,\]</span></p>
 <p>where <span class="math inline">\(\omega_0 = \sqrt{k/m}\)</span> and <span class="math inline">\(\zeta = c / 2\sqrt{mk}\)</span>, <span class="math inline">\(k\)</span> being the spring constant, <span class="math inline">\(m\)</span> the test mass and <span class="math inline">\(c\)</span> the friction constant.</p>
 <p>To solve this second order ODE we need to introduce a second variable to solve for. Say <span class="math inline">\(q = y\)</span> and <span class="math inline">\(p = y&#39;\)</span>.</p>
-<p><span class="math display">\[\begin{aligned}
+<p><span id="eq:harmonic-oscillator" class="eqnos"><span class="math display">\[\begin{aligned}
     q&#39; &amp;= p\\
     p&#39; &amp;= -2\zeta \omega_0 p + \omega_0^2 q
-\end{aligned}\]</span> {#eq:harmonic-oscillator}</p>
+\end{aligned}\]</span><span class="eqnos-number">(3)</span></span> </p>
 <p>The <code>Problem</code> is then given as</p>
 <div class="annotated-code">
 <p><span><em>«paranoodles/harmonic_oscillator.py»=</em></span></p>
