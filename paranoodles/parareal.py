@@ -14,6 +14,6 @@ def parareal(coarse: Solution, fine: Solution):
                    - coarse(y[i-1], t[i-1], t[i])
             # ~\~ end
         return y_n
-    
+
     return f
 # ~\~ end

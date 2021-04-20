@@ -1,7 +1,14 @@
 # Module
 
 ``` {.python file=paranoodles/__init__.py}
-# empty for now
+from .tabulate_solution import tabulate
+from .parareal import parareal
+from . import abstract
+
+from noodles import schedule
+from noodles.run.threading.sqlite3 import run_parallel as run
+
+__all__ = ["tabulate", "parareal", "schedule", "run", "abstract", "schedule"]
 ```
 
 # Problem statement
@@ -10,7 +17,7 @@ I tried to implement the problem statement using abstract base classes (`ABC` mo
 
 ``` {.python file=paranoodles/abstract.py}
 from __future__ import annotations  # enable self-reference in type annotations
-from typing import Callable
+from typing import (Callable, Protocol, TypeVar)
 from abc import (ABC, abstractmethod)
 
 <<abstract-types>>
@@ -24,46 +31,66 @@ Here $y$ can be a scalar value, a vector of values (say a `numpy` array), or any
 
 $$y_{n+1} = y_{n} + \Delta t f(y_{n}, t).$${#eq:euler-method}
 
-+@eq:euler-method is known as the *forward Euler method*. We can capture the *state* $y$ in an abstract class `Vector`
++@eq:euler-method is known as the *forward Euler method*. We can capture the *state* $y$ in an abstract class we'll call `Vector`. We chose this name because we expect this objects to share (some of) the arithmetic properties of mathematical vectors. Namely, we want to be able to add, subtract and scale them. The chunk below states this need of a basic arithmetic in the form of abstract methods.
 
 ``` {.python #abstract-types}
-class Vector(ABC):
-    """Abstract base class for state variable of a problem.
-    This should support simple arithmatic operations."""
-    @abstractmethod
-    def __add__(self, other: Vector) -> Vector:
-        """Summation of two result vectors."""
-        pass
+TVector = TypeVar("TVector", bound="Vector")
 
-    @abstractmethod
-    def __sub__(self, other: Vector) -> Vector:
-        """Difference between two result vectors."""
-        pass
+class Vector(Protocol):
+    def __add__(self: TVector, other: TVector) -> TVector:
+        ...
 
-    @abstractmethod
-    def __mul__(self, other: float) -> Vector:
-        """Scale vector with scalar."""
-        pass
+    def __sub__(self: TVector, other: TVector) -> TVector:
+        ...
 
-    def __rmul__(self, other: float) -> Vector:
-        return self * other
+    def __mul__(self: TVector, other: float) -> TVector:
+        ...
+
+    def __rmul__(self: TVector, other: float) -> TVector:
+        ...
+
 ```
+
+_The implementation of the actual methods can be found below in this document._
 
 Note that we don't make a distinction here between a state vector and a vector representing a change in state. This may change in the future.
 
-An ODE is then given as a function taking a `Vector` and a `float` returning a `Vector`. We define the type `Problem`:
+An ODE is then given as a function taking a `Vector` (the state $y$) and a `float` (the time $t$) returning a `Vector` (the derivative $y' = f(y,t)$ evaluated at $(y,t)$). We define the type `Problem`:
 
 ``` {.python #abstract-types}
-Problem = Callable[[Vector, float], Vector]
+Problem = Callable[[TVector, float], TVector]
 ```
 
-If we have a `Problem`, we're after a `Solution`: a function that, given an initial `Vector`, initial time and final time, gives the resulting `Vector`.
+In mathematical notation the snippet above means:
+
+$$Problem : (y, t) \longrightarrow f(y, t) = y'$$
+
+If we have a `Problem`, we're after a `Solution`: a function that, given an initial `Vector` (the initial condition $y_0$), initial time ($t_0$) and final time ($t$), gives the resulting `Vector` (the solution, $y(t)$ for the given initial conditions).
 
 ``` {.python #abstract-types}
-Solution = Callable[[Vector, float, float], Vector]
+Solution = Callable[[TVector, float, float], TVector]
 ```
 
-Then the forward Euler method (+@eq:euler-method), is given by
+Those readers more familiar with classical physics or mathematics may notice that our `Problem` object corresponds with the function $f$ in (+@eq:ode). The `Solution` object, on the other hand, corresponds with the evolution operator $\phi$ in equation @eq:solution.
+
+$$Solution : (y_0, t_0; t) \longrightarrow \phi(y_0, t_0; t) = y(t).$${#eq:solution}
+
+Intuitively, $\phi$ represents any method that solves (even approximately) our initial value problem. 
+
+As a quick example, think of the differential equation $y' = ry$. This can be solved by analytical integration. The `Problem` and  `Solution` objects is in this case are:
+
+$$ Problem : (y, t) \longrightarrow r y $$
+$$ Solution : (y_0, t_0; t) \longrightarrow y_0 e^{r(t - t_0)} $$
+
+The challenge is, of course, to find a way of transforming a `Problem` into a `Solution`. This is what integration algorithms do.
+
+$$ Integration \ algorithm : Problem \longrightarrow Solution $$
+
+If we look a bit closely at the definitions of `Problem` and `Solution` we'll notice that an integration algorithm is indeed a functional that accepts functions of $(y,t)$ as an input and returns functions of $(y_0, t_0, t)$ as an output.
+
+$$ Integration \ algorithm : f \longrightarrow \phi $$
+
+An example of such an integration algorithm is the forward Euler method (+@eq:euler-method), that can be implemented as:
 
 ``` {.python file=paranoodles/forward_euler.py}
 from .abstract import (Vector, Problem, Solution)
@@ -83,23 +110,24 @@ Any existing solution can be iterated over to provide a solution over a larger t
 <!--\end{cases}.$$-->
 
 ``` {.python file=paranoodles/iterate_solution.py}
-from .abstract import (Vector, Problem, Solution)
+from .abstract import (Vector, Solution)
 import numpy as np
+import math
 
 def iterate_solution(step: Solution, h: float) -> Solution:
     def iter_step(y: Vector, t_0: float, t_1: float) -> Vector:
         """Stepping function of iterated solution."""
         n = math.ceil((t_1 - t_0) / h)
         steps = np.arange(t_0, t_1, n + 1)
-        for t_a, t_b in zip(steps[:-1], steps[1:])
+        for t_a, t_b in zip(steps[:-1], steps[1:]):
             y = step(y, t_a, t_b)
-        return y         
+        return y
     return iter_step
 ```
 
 ## Example: damped harmonic oscillator
 
-The harmonic oscillator can model the movement of a pendulum or the vibration of a mass on a string. 
+The harmonic oscillator can model the movement of a pendulum or the vibration of a mass on a string.
 
 $$y'' + 2\zeta \omega_0 y' + \omega_0^2 y = 0,$$
 
@@ -122,7 +150,7 @@ def harmonic_oscillator(omega_0: float, zeta: float) -> Problem:
     def f(y, t):
         return np.r_[y[1], -2 * zeta * omega_0 * y[1] - omega_0**2 * y[0]]
     return f
-    
+
 <<harmonic-oscillator-solution>>
 ```
 
@@ -130,11 +158,20 @@ def harmonic_oscillator(omega_0: float, zeta: float) -> Problem:
 
 The damped harmonic oscillator has an exact solution, given the ansatz $y = A \exp(z t)$, we get
 
-$$z = \omega_0\left(-\zeta \pm \sqrt{\zeta^2 - 1}\right).$$
+$$z_{\pm} = \omega_0\left(-\zeta \pm \sqrt{\zeta^2 - 1}\right).$$
 
-There are three cases: *overdamped* ($\zeta > 1$), *critical dampening* $\zeta = 1,\ z = -\omega_0$, and *underdamped* $0 \le \zeta < 1,\ z = \omega_0 \exp (i\xi)$.
+and thus the general solution:
 
-In the underdamped case,
+$$y(t) = A \exp(z_+ t) + B \exp(z_- t) \ : \zeta \neq 1 $$
+$$y(t) = (A + Bt) \exp(-\omega_0 t) : \zeta = 1 $$
+
+This dynamical system has three qualitatively different solutions, each of them depending on the sign of the contents of the square root. Particularly, if the contents of the square root are negative, the two possible values for $z$ will be complex numbers, making oscillations possible. More specifically, the three cases are:
+
+- *overdamped* ($\zeta > 1$ and, thus, both $z$ are real numbers)
+- *critical dampening* ($\zeta = 1$ and $z$ is real and equal to $-\omega_0$)
+- *underdamped* ($\mid \zeta \mid < 1$, and $z = -\omega_0\zeta \mp i \omega_0 \sqrt{1 - \zeta^2}$).
+
+The underdamped case is typically the most interesting one. In this case we have solutions of the form:
 
 $$y = A\quad \underbrace{\exp(-\omega_0\zeta t)}_{\rm dampening}\quad\underbrace{\exp(\pm i \omega_0 \sqrt{1 - \zeta^2} t)}_{\rm oscillation},$$
 
@@ -160,17 +197,17 @@ To plot a `Solution`, we need to tabulate the results for a given sequence of ti
 
 ``` {.python file=paranoodles/tabulate_solution.py}
 from .abstract import (Solution, Vector)
-from typing import (Sequence)
+from typing import (Sequence, Any)
 import numpy as np
 
-Array = np.ndarray
+Array = Any
 
 def tabulate(step: Solution, y_0: Vector, t: Array) -> Sequence[Vector]:
     """Tabulate the step-wise solution, starting from `y_0`, for every time
     point given in array `t`."""
-    if isinstance(y_0, Array):
+    if isinstance(y_0, np.ndarray):
         return tabulate_np(step, y_0, t)
-        
+
     y = [y_0]
     for i in range(1, t.size):
         y_i = step(y[i-1], t[i-1], t[i])
@@ -226,7 +263,7 @@ plt.savefig("harmonic.svg")
 From Wikipedia:
 
 > Parareal solves an initial value problem of the form
-> 
+>
 > $$\dot{y}(t) = f(y(t), t), \quad y(t_0) = y_0 \quad \text{with} \quad t_0 \leq t \leq T.$$
 >
 > Here, the right hand side $f$ can correspond to the spatial discretization of a partial differential equation in a method of lines approach.
@@ -252,7 +289,7 @@ From Wikipedia:
 >
 > In the Parareal iteration, the computationally expensive evaluation of $\mathcal{F}(y^k_j, t_j, t_{j+1})$ can be performed in parallel on $P$ processing units. By contrast, the dependency of $y^{k+1}_{j+1}$ on $\mathcal{G}(y^{k+1}_j, t_j, t_{j+1})$ means that the coarse correction has to be computed in serial order.
 
-The core equation translates to:
+Don't get blinded by the details of the algorithm. After all, everything boils down to an update equation that uses a state vector $y$ to calculate the state at the immediately next future step (in the same fashion as equation +@eq:euler-method did). The core equation translates to:
 
 ``` {.python #parareal-core}
 y_n[i] = coarse(y_n[i-1], t[i-1], t[i]) \
@@ -273,7 +310,7 @@ def parareal(coarse: Solution, fine: Solution):
         for i in range(1, m):
             <<parareal-core>>
         return y_n
-    
+
     return f
 ```
 
@@ -281,9 +318,13 @@ def parareal(coarse: Solution, fine: Solution):
 
 The way we implemented the `parareal` function is not very efficient. It's Python, there's a recursion in the dependency, so no way to sweeten it up with `numpy`. Suppose however, that the `fine` solution may take a while to compute, and we only use Python to steer the computation. How can we paralellise the implementation of `parareal`? The answer is: we don't need to! Noodles can do it for us.
 
-``` {.python #noodlify}
-import numpy as np
+``` {.python #import-noodles}
 import noodles
+```
+
+``` {.python #noodlify}
+<<import-noodles>>
+import numpy as np
 from noodles.draw_workflow import draw_workflow
 
 from paranoodles.harmonic_oscillator import \
@@ -319,7 +360,7 @@ It doesn't really matter what the fine integrator does, since we won't run anyth
 
 ``` {.python #noodlify}
 y_euler = noodles.gather(
-    *tabulate(noodles.schedule(fine), [1.0, 0.0], t))
+    *tabulate(fine, [1.0, 0.0], t))
 ```
 
 We can draw the resulting workflow:
@@ -331,8 +372,8 @@ def paint(node, name):
     elif name == "fine":
         node.attr["fillcolor"] = "#88ff88"
     else:
-        node.attr["fillcolor"] = "#ffffff"        
- 
+        node.attr["fillcolor"] = "#ffffff"
+
 draw_workflow('seq-graph.svg', noodles.get_workflow(y_euler), paint)
 ```
 
@@ -349,21 +390,24 @@ def coarse(x, t_0, t_1):
 Parareal is initialised with the ODE integrated by the coarse integrator, just like we did before with the fine one.
 
 ``` {.python #noodlify}
-y_first = noodles.gather(*tabulate(noodles.schedule(coarse), [1.0, 0.0], t))
+y_first = noodles.gather(*tabulate(coarse, [1.0, 0.0], t))
 ```
 
 We can now perform a single iteration of Parareal to see what the workflow looks like:
 
 ``` {.python #noodlify}
 y_parareal = noodles.gather(*parareal(coarse, fine)(y_first, t))
+```
+
+``` {.python #noodlify}
 draw_workflow('parareal-graph.svg', noodles.get_workflow(y_parareal), paint)
 ```
 
 ![Parareal iteration; the fine integrators (green) can be run in parallel.](./img/parareal-graph.svg)
 
-# Tests
+# Create example file
 
-``` {.python file=test.py}
+``` {.python file=examples/harmonic_oscillator.py}
 <<plot-harmonic-oscillator>>
 
 <<noodlify>>
