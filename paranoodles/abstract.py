@@ -27,4 +27,5 @@ Problem = Callable[[TVector, float], TVector]
 # ~\~ begin <<lit/paranoodles.md|abstract-types>>[2]
 Solution = Callable[[TVector, float, float], TVector]
 # ~\~ end
+Mapping = Callable[[TVector], TVector]
 # ~\~ end

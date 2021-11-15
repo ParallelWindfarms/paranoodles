@@ -1,19 +1,25 @@
 # ~\~ language=Python filename=paranoodles/parareal.py
 # ~\~ begin <<lit/paranoodles.md|paranoodles/parareal.py>>[0]
-from .abstract import (Solution)
+from .abstract import (Solution, Mapping)
 
-def parareal(coarse: Solution, fine: Solution):
+def identity(x):
+    return x
+
+# ~\~ end
+# ~\~ begin <<lit/paranoodles.md|paranoodles/parareal.py>>[1]
+def parareal(
+        coarse: Solution,
+        fine: Solution,
+        c2f: Mapping = identity,
+        f2c: Mapping = identity):
     def f(y, t):
         m = t.size
         y_n = [None] * m
         y_n[0] = y[0]
         for i in range(1, m):
-            # ~\~ begin <<lit/paranoodles.md|parareal-core>>[0]
-            y_n[i] = coarse(y_n[i-1], t[i-1], t[i]) \
+            y_n[i] = c2f(coarse(f2c(y_n[i-1]), t[i-1], t[i])) \
                    + fine(y[i-1], t[i-1], t[i]) \
-                   - coarse(y[i-1], t[i-1], t[i])
-            # ~\~ end
+                   - c2f(coarse(f2c(y[i-1]), t[i-1], t[i]))
         return y_n
-
     return f
 # ~\~ end

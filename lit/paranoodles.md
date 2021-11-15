@@ -2,13 +2,14 @@
 
 ``` {.python file=paranoodles/__init__.py}
 from .tabulate_solution import tabulate
-from .parareal import parareal
+from .parareal import parareal, parareal_mapping
 from . import abstract
 
 from noodles import schedule
 from noodles.run.threading.sqlite3 import run_parallel as run
 
-__all__ = ["tabulate", "parareal", "schedule", "run", "abstract", "schedule"]
+__all__ = ["tabulate", "parareal", "parareal_mapping", "schedule",
+           "run", "abstract", "schedule"]
 ```
 
 # Problem statement
@@ -21,6 +22,7 @@ from typing import (Callable, Protocol, TypeVar)
 from abc import (ABC, abstractmethod)
 
 <<abstract-types>>
+Mapping = Callable[[TVector], TVector]
 ```
 
 We have an ODE in the form
@@ -300,17 +302,30 @@ y_n[i] = coarse(y_n[i-1], t[i-1], t[i]) \
 The rest is boiler plate.
 
 ``` {.python file=paranoodles/parareal.py}
-from .abstract import (Solution)
+from .abstract import (Solution, Mapping)
 
-def parareal(coarse: Solution, fine: Solution):
+def identity(x):
+    return x
+
+```
+
+## Including mapping between meshes
+
+``` {.python file=paranoodles/parareal.py}
+def parareal(
+        coarse: Solution,
+        fine: Solution,
+        c2f: Mapping = identity,
+        f2c: Mapping = identity):
     def f(y, t):
         m = t.size
         y_n = [None] * m
         y_n[0] = y[0]
         for i in range(1, m):
-            <<parareal-core>>
+            y_n[i] = c2f(coarse(f2c(y_n[i-1]), t[i-1], t[i])) \
+                   + fine(y[i-1], t[i-1], t[i]) \
+                   - c2f(coarse(f2c(y[i-1]), t[i-1], t[i]))
         return y_n
-
     return f
 ```
 
