@@ -2,13 +2,13 @@
 
 ``` {.python file=paranoodles/__init__.py}
 from .tabulate_solution import tabulate
-from .parareal import parareal, parareal_mapping
+from .parareal import parareal
 from . import abstract
 
 from noodles import schedule
 from noodles.run.threading.sqlite3 import run_parallel as run
 
-__all__ = ["tabulate", "parareal", "parareal_mapping", "schedule",
+__all__ = ["tabulate", "parareal", "schedule",
            "run", "abstract", "schedule"]
 ```
 
