@@ -1,6 +1,6 @@
 noodles
 numpy
-scipy==1.2
+scipy==1.10.0
 pygraphviz
 matplotlib
 plotnine
